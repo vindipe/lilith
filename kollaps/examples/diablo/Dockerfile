@@ -70,7 +70,7 @@ RUN apt-get upgrade -y
 RUN apt-get clean; rm -rf /var/lib/apt/lists/
 
 
-ADD ./resources-measure.sh /
+COPY ./resources-measure.sh /
 RUN chmod +x resources-measure.sh
 
 RUN mkdir -p /results

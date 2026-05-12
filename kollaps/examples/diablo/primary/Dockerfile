@@ -54,13 +54,13 @@ RUN pip install --no-cache-dir \
 RUN apt-get upgrade -y
 RUN apt-get clean; rm -rf /var/lib/apt/lists/
 
-ADD ./minion.sh /
+COPY ./minion.sh /
 RUN chmod +x minion.sh
 
-ADD ./init-minion.sh /
+COPY ./init-minion.sh /
 RUN chmod +x init-minion.sh
 
-ADD ./fixes /fixes
+COPY ./fixes /fixes
 COPY ./tmp/* /tmp/
 RUN find /tmp -type f \( -name "*.sh" -o -name "*.py" \) -exec chmod +x {} \;
 
