@@ -1,5 +1,5 @@
 FROM entity-image AS node
-                   
+
 ADD ./entity.sh /
 RUN chmod +x entity.sh
 

@@ -3,7 +3,7 @@ FROM ubuntu:22.04
 ENV DEBIAN_FRONTEND=noninteractive
 
 # general dependencies
-RUN apt-get update -y 
+RUN apt-get update -y
 
 RUN apt-get install -y \
         openssh-client openssh-server \
@@ -13,10 +13,10 @@ RUN apt-get install -y \
         iputils-ping iperf3 \
         vnstat procps sysstat bc \
         git python3-pip \
-        psmisc gzip \        
+        psmisc gzip \
         clang cmake pkg-config \
-        libudev-dev llvm ninja-build libboost-all-dev \  
-        libjson-perl libyaml-perl \   
+        libudev-dev llvm ninja-build libboost-all-dev \
+        libjson-perl libyaml-perl \
         tzdata \
         nano bash sudo
 
@@ -29,7 +29,7 @@ RUN apt-get install -y \
 
 # Diem dep.
 RUN apt-get install -y \
-        libssl-dev zlib1g-dev      
+        libssl-dev zlib1g-dev
 
 SHELL ["/bin/bash", "-c"]
 
@@ -45,7 +45,7 @@ COPY id_ed25519.pub /root/.ssh/authorized_keys
 RUN echo "StrictHostKeyChecking no" >> /root/.ssh/config
 
 # Set correct permissions for the SSH private key
-RUN chmod 600 /root/.ssh/authorized_keys && \ 
+RUN chmod 600 /root/.ssh/authorized_keys && \
     chmod 600 /root/.ssh/id_ed25519.pub && \
     chmod 600 /root/.ssh/config
 
@@ -58,7 +58,7 @@ RUN exec bash
 
 # Disable password authentication and only allow public key authentication
 RUN sed -i 's/#PasswordAuthentication yes/PasswordAuthentication no/' /etc/ssh/sshd_config && \
-    sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config 
+    sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
 
 # Expose SSH port
 EXPOSE 22
