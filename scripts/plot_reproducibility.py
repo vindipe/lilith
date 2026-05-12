@@ -189,7 +189,7 @@ def block_label(name: str) -> str:
     return mapping.get(name, name)
 
 # -------------------------------------------------------------------
-# Helpers for Tables 
+# Helpers for Tables
 # -------------------------------------------------------------------
 def topo_label(t: str) -> str:
     mapping = {

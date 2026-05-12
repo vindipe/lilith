@@ -1,16 +1,23 @@
-# Lilith cluster inventory template
+# Lilith machine inventory template
 #
-# Add one SSH target per line.
-# Each target can be either:
-#   - a Host alias configured in your SSH client
-#   - a user@host entry
-#   - a user@ip entry
+# Copy this file to machines.txt, then edit it.
 #
-# Example:
+# Rules:
+# - one SSH target per active line;
+# - empty lines are ignored;
+# - lines starting with # are ignored;
+# - machines.txt is local-only and must not be committed.
+#
+# Local smoke-test mode:
+#
+# localhost
+#
+# Cluster/cloud examples:
+#
 # user@node-1.example.com
 # user@node-2.example.com
-# user@node-3.example.com
-
-user@node-1.example.com
-user@node-2.example.com
-user@node-3.example.com
+# ubuntu@10.0.0.10
+# eiger-1.maas
+#
+# For real experiments, every target must be reachable through SSH and must
+# support non-interactive sudo unless a custom execution profile is used.

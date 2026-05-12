@@ -25,6 +25,15 @@ Options:
 
   --skip-keygen           Do not generate the container SSH key pair.
 
+  --skip-system-deps      Do not install or update local system packages.
+
+  --runtime-only          Runtime preparation only. This skips system package
+                          installation and Kollaps cloning, but still checks
+                          the container SSH key pair and runtime directories.
+
+  --non-interactive       Do not prompt for sudo. If sudo credentials are
+                          required but unavailable, fail immediately.
+
   -h, --help              Show this help message.
 
 Examples:
@@ -38,9 +47,24 @@ with_ssh_server=0
 tune_sshd=0
 skip_kollaps_clone=0
 skip_keygen=0
+skip_system_deps=0
+non_interactive=0
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
+    --runtime-only)
+      skip_system_deps=1
+      skip_kollaps_clone=1
+      shift
+      ;;
+    --skip-system-deps)
+      skip_system_deps=1
+      shift
+      ;;
+    --non-interactive)
+      non_interactive=1
+      shift
+      ;;
     --with-ssh-server)
       with_ssh_server=1
       shift
@@ -74,33 +98,51 @@ if [[ "$tune_sshd" -eq 1 && "$with_ssh_server" -ne 1 ]]; then
   exit 1
 fi
 
-echo "Installing local system dependencies..."
-sudo apt-get update -y
+if [[ "$skip_system_deps" -eq 1 ]]; then
+  echo "Skipping local system dependency installation."
+else
+  echo "Installing local system dependencies..."
 
-base_packages=(
-  python3
-  python3-pip
+  sudo_cmd=(sudo)
+
+  if [[ "$non_interactive" -eq 1 ]]; then
+    if ! sudo -n true 2>/dev/null; then
+      echo "Error: sudo credentials are required, but non-interactive sudo is not available." >&2
+      echo "Run ./scripts/requirements.sh manually once, or configure passwordless sudo for the benchmark host." >&2
+      exit 1
+    fi
+
+    sudo_cmd=(sudo -n)
+  fi
+
+  "${sudo_cmd[@]}" apt-get update -y
+
+  base_packages=(
+    python3
+    python3-pip
+    python3-numpy
+    python3-pandas
+    python3-matplotlib
+    python3-networkx
+    python3-lxml
+  python3-yaml
+    python3-seaborn
+    python3-scipy
+    python3-statsmodels
+    curl
   rsync
-  git
-  openssh-client
-)
+    git
+    openssh-client
+  )
 
-if [[ "$with_ssh_server" -eq 1 ]]; then
-  base_packages+=(openssh-server)
+  if [[ "$with_ssh_server" -eq 1 ]]; then
+    base_packages+=(openssh-server)
+  fi
+
+  "${sudo_cmd[@]}" apt-get install -y "${base_packages[@]}"
+
+  echo "Python dependencies are installed through apt packages."
 fi
-
-sudo apt-get install -y "${base_packages[@]}"
-
-echo "Installing Python dependencies..."
-python3 -m pip install --upgrade pip
-python3 -m pip install \
-  pandas \
-  matplotlib \
-  numpy \
-  networkx \
-  lxml \
-  seaborn \
-  scipy
 
 if [[ "$with_ssh_server" -eq 1 && "$tune_sshd" -eq 1 ]]; then
   echo "Applying optional SSH daemon tuning..."
@@ -147,16 +189,27 @@ if [[ "$skip_keygen" -ne 1 ]]; then
   public_key="kollaps/examples/diablo/id_ed25519.pub"
   private_key="kollaps/examples/diablo/primary/tmp/id_ed25519"
 
-  mkdir -p kollaps/examples/diablo/primary/tmp
+  mkdir -p "$(dirname "$public_key")"
+  mkdir -p "$(dirname "$private_key")"
 
-  if [[ ! -e "$public_key" && ! -e "$private_key" ]]; then
-    ssh-keygen -t ed25519 -f kollaps/examples/diablo/id_ed25519 -N '' -q
-    mv kollaps/examples/diablo/id_ed25519 "$private_key"
+  if [[ -e "$public_key" && -e "$private_key" ]]; then
     chmod 600 "$private_key"
     chmod 600 "$public_key"
-    echo "Container SSH key pair generated."
-  else
     echo "Container SSH key pair already exists."
+  else
+    if [[ -e "$public_key" || -e "$private_key" || -e "${private_key}.pub" ]]; then
+      echo "Incomplete container SSH key pair found; regenerating it."
+    fi
+
+    rm -f -- "$public_key" "$private_key" "${private_key}.pub"
+
+    ssh-keygen -t ed25519 -f "$private_key" -N '' -q
+    mv "${private_key}.pub" "$public_key"
+
+    chmod 600 "$private_key"
+    chmod 600 "$public_key"
+
+    echo "Container SSH key pair generated."
   fi
 fi
 

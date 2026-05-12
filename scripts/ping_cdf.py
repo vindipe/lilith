@@ -61,33 +61,33 @@ col_index=0
 
 for pair in month_year:
     plt.subplots_adjust(wspace=0.01, hspace=0.01)
-    df_month = grouped_df[grouped_df['month_year'] == pair]  # Selezioniamo solo i dati relativi a quel mese        
-    
+    df_month = grouped_df[grouped_df['month_year'] == pair]  # Selezioniamo solo i dati relativi a quel mese
+
     month_name = calendar.month_name[pair.month].capitalize()
     year = pair.year
-    
+
     sns.scatterplot(data=df_month, x='src_region', y='dst_region', size=df_month['ping_avg'], sizes=(50, 500), legend='brief', palette=cmap, hue='ping_avg', ax=axes[col_index])
     sns.scatterplot(data=df_month, x='src_region', y='dst_region', size=df_month['std_dev'], sizes=(100, 800), legend='brief', color='black', hue='std_dev', marker='_', linewidths=2, ax=axes[col_index])
-    
+
     axes[col_index].set_title(f'{month_name} {year}', fontsize=17)
-    
+
     if row_index == 0:
         axes[col_index].set_xticklabels(axes[col_index].get_xticklabels(), rotation=25, ha='right', fontsize=14)
     if col_index == 0:
         axes[col_index].set_yticklabels(axes[col_index].get_yticklabels(), ha='right', fontsize=16)
-      
+
     for i in range(1):
         for j in range(4):
             ax = axes[j]
             if j != 0:  # Se la colonna non è la prima
                 ax.set_yticks([])  # Rimuovi i ticks sull'asse y
             # if i != 2:  # Se la riga non è l'ultima
-            #     ax.set_xticks([])  # Rimuovi i ticks sull'asse x 
-    
+            #     ax.set_xticks([])  # Rimuovi i ticks sull'asse x
+
     col_index += 1
     if col_index == 4:
         col_index = 0
-        row_index += 1    
+        row_index += 1
 
 # Rimuovi le legende dai plot
 for ax in axes.flat:
@@ -98,8 +98,8 @@ ping_avg_handles, ping_avg_labels = axes[0].get_legend_handles_labels()
 ping_avg_legend = fig.legend(ping_avg_handles, ping_avg_labels, loc='center left', title='Ping Avg | Std_Dev (ms)', bbox_to_anchor=(-0.15, 0.5), fancybox=True, shadow=True, ncol=2, prop={'size': 16}, title_fontsize=18)
 
 # plt.tight_layout(rect=[0, 0, 1, 0.9])
-plt.tight_layout()  
- 
+plt.tight_layout()
+
 plt.setp(axes, xlabel=None, ylabel=None)
 # fig.suptitle('1 Year of AWS Cloud Latencies measurements', fontsize=16, y=0.95)
 # plt.savefig('trimesters_latencies.png', bbox_inches='tight')
@@ -115,7 +115,7 @@ plt.savefig('results/img/trimesters_latencies.pdf', dpi=300, bbox_extra_artists=
 
 # for month in months:
 #     df_month = df[df['month'] == month]  # Selezioniamo solo i dati relativi a quel mese
-    
+
 #     # Creiamo un nuovo grafico per questo mese
 #     plt.figure(figsize=(5, 3))
 #     plt.title(f'{calendar.month_name[month].capitalize()}', fontsize=10)
@@ -135,7 +135,7 @@ plt.savefig('results/img/trimesters_latencies.pdf', dpi=300, bbox_extra_artists=
 #     plt.yticks(rotation=45, ha='right', fontsize=7)
 #     plt.xlabel('')
 #     plt.ylabel('')
-    
+
 #     plt.savefig(f'cloud-{month}-latencies.png')
 #     plt.savefig(f'cloud-{month}-latencies.pdf', dpi=300, bbox_inches='tight')
 
@@ -155,7 +155,7 @@ plt.figure(figsize=(10, 6))
 for pair in month_year:
     month_name = calendar.month_name[pair.month].capitalize()
     year = pair.year
-    
+
     ping_avg_month = df[df['month_year'] == pair]['ping_avg']
     ping_avg_month_sorted = np.sort(ping_avg_month)
     cdf = np.arange(1, len(ping_avg_month_sorted) + 1) / len(ping_avg_month_sorted)
@@ -169,7 +169,7 @@ plt.grid(True)
 
 plt.savefig('results/img/cloud-cdf-latencies.png')
 plt.savefig('results/img/cloud-cdf-latencies.pdf', dpi=300, bbox_inches='tight')
-plt.clf() 
+plt.clf()
 
 
 # # ACM-REP
@@ -209,33 +209,33 @@ plt.clf()
 
 # for pair in month_year:
 #     # plt.subplots_adjust(wspace=0.01, hspace=0.01)
-#     df_month = grouped_df[grouped_df['month_year'] == pair]  # Selezioniamo solo i dati relativi a quel mese        
-    
+#     df_month = grouped_df[grouped_df['month_year'] == pair]  # Selezioniamo solo i dati relativi a quel mese
+
 #     month_name = calendar.month_name[pair.month].capitalize()
 #     year = pair.year
-    
+
 #     sns.scatterplot(data=df_month, x='src_region', y='dst_region', size=df_month['ping_avg'], sizes=(50, 500), legend='brief', palette=cmap, hue='ping_avg', ax=axes[row_index, col_index])
 #     sns.scatterplot(data=df_month, x='src_region', y='dst_region', size=df_month['std_dev'], sizes=(100, 800), legend='brief', color='black', hue='std_dev', marker='_', linewidths=2, ax=axes[row_index, col_index])
-    
+
 #     axes[row_index, col_index].set_title(f'{month_name} {year}', fontsize=17)
-    
+
 #     if row_index == 2:
 #         axes[row_index, col_index].set_xticklabels(axes[row_index, col_index].get_xticklabels(), rotation=25, ha='right', fontsize=14)
 #     if col_index == 0:
 #         axes[row_index, col_index].set_yticklabels(axes[row_index, col_index].get_yticklabels(), ha='right', fontsize=16)
-      
+
 #     for i in range(3):
 #         for j in range(4):
 #             ax = axes[i, j]
 #             if j != 0:  # Se la colonna non è la prima
 #                 ax.set_yticks([])  # Rimuovi i ticks sull'asse y
 #             if i != 2:  # Se la riga non è l'ultima
-#                 ax.set_xticks([])  # Rimuovi i ticks sull'asse x 
-    
+#                 ax.set_xticks([])  # Rimuovi i ticks sull'asse x
+
 #     col_index += 1
 #     if col_index == 4:
 #         col_index = 0
-#         row_index += 1    
+#         row_index += 1
 
 # # Rimuovi le legende dai plot
 # for ax in axes.flat:
@@ -246,9 +246,9 @@ plt.clf()
 # ping_avg_legend = fig.legend(ping_avg_handles, ping_avg_labels, loc='upper center', title='Ping Avg                                   |                                   Std_Dev (ms)', bbox_to_anchor=(0.53, 1.01), fancybox=True, shadow=True, ncol=len(ping_avg_labels), prop={'size': 16}, title_fontsize=18)
 
 # # plt.tight_layout(rect=[0, 0, 1, 0.9])
-# # plt.tight_layout()  
+# # plt.tight_layout()
 # plt.tight_layout(pad=0.1, rect=[0, 0, 1, 0.94])
- 
+
 # plt.setp(axes, xlabel=None, ylabel=None)
 # # fig.suptitle('1 Year of AWS Cloud Latencies measurements', fontsize=16, y=0.95)
 # # plt.savefig('trimesters_latencies.png', bbox_inches='tight')
@@ -297,11 +297,11 @@ for region in regions:
     # plt.subplots_adjust(wspace=0.01, hspace=0.01)
     df_region = grouped_df[(grouped_df['src_region'] == region) | (grouped_df['dst_region'] == region)]
     mask = df_region['dst_region'] == region
-    df_region.loc[mask, ['src_region', 'dst_region']] = df_region.loc[mask, ['dst_region', 'src_region']].values        
-    
+    df_region.loc[mask, ['src_region', 'dst_region']] = df_region.loc[mask, ['dst_region', 'src_region']].values
+
     # print(df_region)
     # df_region.to_csv("temp/temp.csv", index=False)
-    
+
     ax = axes[row_index, col_index]
 
     # sns.stripplot(
@@ -321,42 +321,42 @@ for region in regions:
     ax.set_ylim(0.001, 60)
     # ax.set_ylim(0, 60)
 
-    ax.set_title(f'AWS Source Region: {region}', fontsize=17)  
-    
+    ax.set_title(f'AWS Source Region: {region}', fontsize=17)
+
     min_date = df_region['origin'].min()
-    max_date = df_region['origin'].max()    
-    ax.set_xlim(min_date, max_date) 
-    
-    # Formatter 
+    max_date = df_region['origin'].max()
+    ax.set_xlim(min_date, max_date)
+
+    # Formatter
     # ax.xaxis.set_major_locator(mdates.MonthLocator())
-    # ax.xaxis.set_major_formatter(mdates.DateFormatter('%b %Y'))    
+    # ax.xaxis.set_major_formatter(mdates.DateFormatter('%b %Y'))
     ax.xaxis.set_major_locator(mdates.MonthLocator())
-    ax.xaxis.set_major_formatter(mdates.DateFormatter("%b '%y"))    
-    
+    ax.xaxis.set_major_formatter(mdates.DateFormatter("%b '%y"))
+
     # print(row_index)
     if row_index == 4:
         ax.set_xticklabels(ax.get_xticklabels(), rotation=25, ha='right', fontsize=14)
     if col_index == 0:
-        ax.set_yticklabels(ax.get_yticklabels(), ha='right', fontsize=16)            
-      
+        ax.set_yticklabels(ax.get_yticklabels(), ha='right', fontsize=16)
+
     for i in range(5):
         for j in range(2):
             ax = axes[i, j]
-            
+
             xticks = ax.get_xticks()
             for x in xticks:
                 ax.axvline(x=x, color='gray', linestyle='--', alpha=0.6, linewidth=1)
-            ax.grid(True, axis='x')            
-            
-            if j != 0:  
-                ax.set_yticks([])  
-            if i != 4:  
-                ax.set_xticks([])  
-                      
+            ax.grid(True, axis='x')
+
+            if j != 0:
+                ax.set_yticks([])
+            if i != 4:
+                ax.set_xticks([])
+
     col_index += 1
     if col_index == 2:
         col_index = 0
-        row_index += 1    
+        row_index += 1
 
 # Rimuovi le legende dai plot
 for ax in axes.flat:
@@ -367,11 +367,11 @@ region_pair_handles, region_pair_labels = axes[0, 0].get_legend_handles_labels()
 region_pair_legend = fig.legend(region_pair_handles, region_pair_labels, loc='upper center', title='AWS Destination Regions', bbox_to_anchor=(0.54, 1.03), fancybox=True, shadow=True, ncol=len(region_pair_labels), prop={'size': 16}, title_fontsize=18)
 
 # plt.tight_layout(rect=[0, 0, 1, 0.9])
-plt.tight_layout()  
+plt.tight_layout()
 # plt.tight_layout(pad=0.1, rect=[0.05, 0, 0, 0.95])
 # plt.tight_layout(pad=0.1, rect=[0.1, 0.05, 0.95, 0.95])
 plt.subplots_adjust(left=0.14, top=0.91)
- 
+
 plt.setp(axes, xlabel=None, ylabel=None)
 # fig.suptitle('1 Year of AWS Cloud Latencies measurements', fontsize=16, y=0.95)
 

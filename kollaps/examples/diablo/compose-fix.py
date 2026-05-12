@@ -1,4 +1,5 @@
-import oyaml as yaml
+import yaml
+import os
 import sys
 
 def read_docker_compose(file_path, exclude_substrings, cpu_limit, ram_limit):
@@ -43,8 +44,10 @@ def read_docker_compose(file_path, exclude_substrings, cpu_limit, ram_limit):
                                 commands = ' '.join(docker_compose_config['services'][service]['command'])
                                 commands_file.write(commands)                                                                            
                                         
-                with open(file_path, 'w') as write_file:
+                tmp_path = f"{file_path}.tmp"
+                with open(tmp_path, 'w') as write_file:
                     yaml.dump(docker_compose_config, write_file, default_flow_style=False)
+                os.replace(tmp_path, file_path)
 
             else:
                 print("The Docker Compose file does not contain the 'services' section.")

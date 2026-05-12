@@ -1,22 +1,22 @@
 # Primary container runtime assets
 
-This directory contains runtime assets that are copied into the Lilith primary
-container during the Docker image build.
+This directory contains helper files copied into the Lilith primary container under `/tmp` during the Docker image build.
 
-Despite the directory name, these files are not ordinary local temporary files.
-They are part of the current Lilith/Kollaps/Diablo integration contract.
+Despite the directory name, tracked files here are not ordinary local temporary files. They are runtime helper assets used by the Lilith/Kollaps/Diablo integration.
 
-Tracked files in this directory include helper scripts and workload definitions
-used inside the primary container, for example:
+Tracked files currently include:
 
 - `export.sh`
 - `out.py`
 - `latencies.sh`
 - `start_measurements.sh`
 - `kollaps-p2p-latencies.py`
-- `workload-dota.yaml`
 
-Generated local files should not be committed. In particular:
+Workload definitions do not belong here. They are stored in:
+
+`kollaps/examples/diablo/primary/fixes/`
+
+Generated local files must not be committed. In particular:
 
 - `id_ed25519`
 - `aws.csv`

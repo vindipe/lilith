@@ -46,10 +46,6 @@ cp /fixes/lilith minion/bin
 chmod +x minion/bin/lilith
 cp /fixes/*.yaml minion
 
-# Some legacy workload definitions are currently staged in /tmp and copied
-# into the primary container by the Dockerfile.
-cp /tmp/workload-dota.yaml minion
-
 runs=10
 
 if [ "$1" -eq 0 ]; then

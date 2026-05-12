@@ -14,7 +14,10 @@ if len(sys.argv) != 2:
 
 directory_path = sys.argv[1]
 
-cartella_primary = next(folder for folder in os.listdir(directory_path) if 'primary' in folder)
+cartella_primary = next((folder for folder in os.listdir(directory_path) if 'primary' in folder), None)
+if cartella_primary is None:
+    print(f"No primary results found in {directory_path}. Skipping {os.path.basename(__file__)}.")
+    sys.exit(0)
 bench_csv = pd.read_csv(f"{directory_path}/{cartella_primary}/bench-results.csv")
 
 # rimosso CPU-Usage

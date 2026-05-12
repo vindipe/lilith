@@ -55,12 +55,12 @@ def process_file(filename):
     #             'origin': origin
     #         })
 
-    for data_entry in json_data:                    
+    for data_entry in json_data:
         src_region = data_entry["region"]
         if src_region in regions:
             averages = data_entry["averages"]
             for average_data in averages:
-                dst_region = average_data["regionTo"]                                
+                dst_region = average_data["regionTo"]
                 if dst_region in regions and dst_region != src_region:
                     ping_avg = average_data["average"]
                     rows.append({
@@ -68,8 +68,8 @@ def process_file(filename):
                         'dst_region': dst_region,
                         'ping_avg': ping_avg,
                         'origin': origin
-                    })                    
-                    
+                    })
+
     return rows
 
 
@@ -86,7 +86,7 @@ def main():
     df = pd.DataFrame(all_rows)
     df = df.sort_values(by='origin')
     # df.to_csv('misc/ping-complete.csv', index=False)
-    df.to_csv('misc/ping.csv', index=False)    
+    df.to_csv('misc/ping.csv', index=False)
     # print(df)
 
 

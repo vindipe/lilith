@@ -143,3 +143,7 @@ misc/handler.tar.gz
 # Generated blockchain-specific Lilith worker.
 # Created by run.sh from misc/lilith/lilith-<implementation>.
 kollaps/examples/diablo/primary/fixes/lilith
+# Lilith generated runtime files
+kollaps/examples/diablo/id_ed25519.pub
+machines.*.bak
+machines.cluster.bak

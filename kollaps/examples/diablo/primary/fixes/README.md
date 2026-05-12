@@ -19,3 +19,17 @@ Examples:
 - misc/lilith/lilith-solana
 
 The generated fixes/lilith file is ignored by .gitignore.
+
+## Workload definitions
+
+Workload YAML files are stored here because they are static inputs consumed by Minion/Diablo.
+
+Examples:
+
+- `workload-paypal.yaml`
+- `workload-visa.yaml`
+- `workload-football.yaml`
+- `workload-gafam-long.yaml`
+- `workload-dota.yaml`
+
+The primary container copies all workload files from `/fixes` into the Minion working directory.

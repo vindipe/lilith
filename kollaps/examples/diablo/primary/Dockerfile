@@ -8,53 +8,26 @@ COPY tmp/id_ed25519 /root/.ssh/id_ed25519
 RUN chmod 700 /root/.ssh && \
     chmod 600 /root/.ssh/id_ed25519
 
-# perlbrew and Perl dependencies installation
-RUN curl -L https://install.perlbrew.pl | bash \
-    && sleep 2 \
-    && source /root/perl5/perlbrew/etc/bashrc
-RUN exec bash; \
-    perlbrew install --notest --force perl-5.34.0; \
-    perlbrew switch perl-5.34.0
+# Primary runtime dependencies.
+#
+# Use Ubuntu packages instead of source-built language runtimes.
+# This keeps the Docker build faster, more reproducible, and suitable for
+# unattended local/cloud/cluster smoke tests.
+RUN apt-get update -y && \
+    apt-get install -y --no-install-recommends \
+      libcapture-tiny-perl \
+      libxml-simple-perl \
+      libio-tee-perl \
+      libjson-perl \
+      libyaml-perl \
+      python3-yaml \
+      python3-pandas \
+      python3-seaborn \
+      python3-matplotlib \
+      python3-numpy && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
-# Additional Perl dependencies
-RUN wget -O YAML-1.24.tar.gz http://search.cpan.org/CPAN/authors/id/T/TI/TINITA/YAML-1.24.tar.gz; \
-    tar -xzvf YAML-1.24.tar.gz; \
-    cd YAML-1.24; \
-    perl Makefile.PL; \
-    make; \
-    make install; \
-    cd /; \
-    wget -O IO-Tee-0.65.tar.gz http://search.cpan.org/CPAN/authors/id/N/NE/NEILB/IO-Tee-0.65.tar.gz; \
-    tar -xzvf IO-Tee-0.65.tar.gz; \
-    cd IO-Tee-0.65; \
-    perl Makefile.PL; \
-    make; \
-    make install; \
-    cd /; \
-    cpan -i Capture::Tiny; \
-    cpan -i XML::Simple; \
-    cpan YAML; \
-    cpan JSON
-
-# Install pyenv and Python 3.10.6
-RUN curl https://pyenv.run | bash; \
-    echo 'export PATH="$HOME/.pyenv/bin:$PATH"' >> /root/.bashrc; \
-    echo 'eval "$(pyenv init --path)"' >> /root/.bashrc; \
-    echo 'eval "$(pyenv virtualenv-init -)"' >> /root/.bashrc; \
-    source /root/.bashrc
-RUN exec bash; \
-    pyenv install -s 3.10.6; \
-    pyenv global 3.10.6; \
-    pip install PyYAML
-
-RUN pip install --no-cache-dir \
-    pandas \
-    seaborn \
-    matplotlib \
-    numpy
-
-RUN apt-get upgrade -y
-RUN apt-get clean; rm -rf /var/lib/apt/lists/
 
 COPY ./minion.sh /
 RUN chmod +x minion.sh

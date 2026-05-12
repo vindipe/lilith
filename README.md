@@ -111,3 +111,41 @@ The original research workflow is preserved, but the repository is being cleaned
 ## Citation
 
 Citation metadata will be added before the first public GitHub release.
+
+## Repository layout
+
+See `docs/repository-layout.md` for a description of source files, runtime-generated files, local-only files, and ignored outputs.
+
+## Quick validation
+
+Before running a full benchmark campaign, validate the repository layout and selected configuration:
+
+`LILITH_EXECUTION_PROFILE=local ./run.sh --validate-only --implementation poa --secondaries 1 --dataset diablo --mode full-mesh --size 1 --link hop --check 0 --dynamic 0 --switch 0 --latency 0`
+
+This command does not build Docker images, deploy services, or start benchmark workloads. It only checks that the selected inputs and repository structure are coherent.
+
+For local development, set `machines.txt` to:
+
+`localhost`
+
+Then use `LILITH_EXECUTION_PROFILE=local` for smoke tests.
+
+Full benchmark execution is intended for cloud or cluster environments. See `docs/execution-modes.md`.
+
+## Execution modes
+
+Lilith supports cluster/cloud execution for full experiments and a local smoke-test mode for repository validation.
+
+Full benchmark campaigns should run on suitable cloud or cluster machines with SSH access, Docker support, Docker Swarm support, and non-interactive sudo.
+
+Local development can use:
+
+`LILITH_EXECUTION_PROFILE=local`
+
+with `machines.txt` containing:
+
+`localhost`
+
+Local smoke-test mode validates the pipeline without running the full cluster-scale deploy/benchmark workload.
+
+See `docs/execution-modes.md` for details.

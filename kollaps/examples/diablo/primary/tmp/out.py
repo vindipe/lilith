@@ -15,7 +15,6 @@ if len(sys.argv) != 2:
 directory_path = sys.argv[1]
 
 file_path = "/tmp/run.tmp"
-# file_path = "/mnt/d/tmp/new/algorand-cores8-ram16-secondaries10-bandwidth1-datasetdiablo-size1-strategyhop-dynamic0-hypercube-2024-05-05_12-12-39/kollaps_logs/algorand.tmp"
 try:
     with open(file_path, 'r') as file:
         content = file.read()
@@ -207,4 +206,3 @@ avg_df[['average_load', 'average_throughput', 'average_latency', 'median_latency
 print(avg_df)
 
 avg_df.to_csv("/results/bench-results.csv", index=False)
-# avg_df.to_csv("/mnt/d/tmp/new/algorand-cores8-ram16-secondaries10-bandwidth1-datasetdiablo-size1-strategyhop-dynamic0-hypercube-2024-05-05_12-12-39/kollaps_primary-cf96b2eb-bb9f-4611-80b8-52308fb44328.1.ukjdjv3ml4l0ybb3x8sq4qlqu/bench-results.csv", index=False)
