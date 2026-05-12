@@ -36,11 +36,15 @@ SHELL ["/bin/bash", "-c"]
 # Modifying the sudoers file to allow the use of sudo without a password.
 RUN echo "ALL ALL=(ALL:ALL) NOPASSWD: ALL" > /etc/sudoers.d/nopasswd
 
-# Copy the SSH private key to the container
+# Container-only SSH setup used by the emulated Kollaps/Diablo runtime.
+# The public key is copied into authorized_keys so containers can communicate
+# with each other during benchmark execution.
 COPY id_ed25519.pub /root/.ssh/id_ed25519.pub
 COPY id_ed25519.pub /root/.ssh/authorized_keys
 
-# Create and add content to the SSH config file
+# Create the container-local SSH client configuration.
+# Strict host key checking is disabled only inside the ephemeral benchmark
+# containers, where hosts are generated dynamically by the emulation runtime.
 # RUN echo "RemoteCommand cd /; \$SHELL -il" > /root/.ssh/config
 RUN echo "StrictHostKeyChecking no" >> /root/.ssh/config
 
@@ -56,7 +60,9 @@ RUN source /root/.bashrc
 RUN exec bash
 
 
-# Disable password authentication and only allow public key authentication
+# Container-only SSH daemon configuration. Password authentication is disabled;
+# root login is allowed inside the emulated benchmark containers so the primary
+# container can orchestrate the runtime.
 RUN sed -i 's/#PasswordAuthentication yes/PasswordAuthentication no/' /etc/ssh/sshd_config && \
     sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
 
