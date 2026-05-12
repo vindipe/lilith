@@ -1,0 +1,145 @@
+# -------------------------------------------------------------------
+# Lilith - Git ignore policy
+# -------------------------------------------------------------------
+# Goal:
+# - keep source code, configuration templates, Dockerfiles, workloads,
+#   and required input datasets under version control;
+# - exclude generated outputs, local cluster configuration, logs,
+#   temporary files, cloned third-party repositories, and secrets.
+# -------------------------------------------------------------------
+
+
+# -------------------------------------------------------------------
+# Operating system / editor files
+# -------------------------------------------------------------------
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+
+
+# -------------------------------------------------------------------
+# Python cache / local environments
+# -------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+venv/
+.venv/
+env/
+ENV/
+
+
+# -------------------------------------------------------------------
+# Local cluster configuration
+# -------------------------------------------------------------------
+# The public repository should provide machines.example.txt instead.
+machines.txt
+machines.local.backup
+machines*.local
+machines copy.txt
+
+
+# -------------------------------------------------------------------
+# Logs and runtime state
+# -------------------------------------------------------------------
+misc/logs/
+tmux-session.log
+*.log
+*.tmp
+*.bkp
+*.bak
+
+
+# -------------------------------------------------------------------
+# Experiment outputs
+# -------------------------------------------------------------------
+results/
+temp/
+
+
+# -------------------------------------------------------------------
+# Generated plots and documents
+# -------------------------------------------------------------------
+# Keep source files and documentation under version control.
+# Generated plots should be reproduced, not committed.
+*.png
+*.pdf
+*.svg
+
+
+# -------------------------------------------------------------------
+# Kollaps local clone / build artifacts
+# -------------------------------------------------------------------
+kollaps/Kollaps/
+kollaps/kollaps.tar.gz
+kollaps/*.tar.gz
+kollaps/**/*.tar.gz
+
+
+# -------------------------------------------------------------------
+# Generated Kollaps topology/deployment files
+# -------------------------------------------------------------------
+kollaps/examples/topology.xml
+kollaps/examples/topology.yaml
+kollaps/examples/arguments.txt
+kollaps/examples/swarm_init_output.txt
+
+
+# -------------------------------------------------------------------
+# Diablo / primary runtime files
+# -------------------------------------------------------------------
+kollaps/examples/diablo/primary/tmp/aws.csv
+kollaps/examples/diablo/primary/tmp/run.tmp
+kollaps/examples/diablo/primary/tmp/id_ed25519
+kollaps/examples/diablo/primary/tmp/*.tmp
+kollaps/examples/diablo/primary/tmp/*.log
+
+
+# -------------------------------------------------------------------
+# SSH keys and credentials
+# -------------------------------------------------------------------
+id_ed25519
+id_ed25519.pub
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+*.asc
+
+
+# -------------------------------------------------------------------
+# Downloaded / expanded cloudping raw data
+# -------------------------------------------------------------------
+# Keep misc/cloudping/ping.csv because it is required by the tool.
+misc/cloudping/tmp/
+misc/cloudping/ping-complete.csv
+misc/cloudping/*.json
+
+
+# -------------------------------------------------------------------
+# Archives and transfer artifacts
+# -------------------------------------------------------------------
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.7z
+*.rar
+misc/handler.tar.gz
+
+
+# -------------------------------------------------------------------
+# Windows alternate data stream metadata
+# -------------------------------------------------------------------
+*:Zone.Identifier
+# Generated blockchain-specific Lilith worker.
+# Created by run.sh from misc/lilith/lilith-<implementation>.
+kollaps/examples/diablo/primary/fixes/lilith

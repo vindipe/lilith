@@ -1,0 +1,166 @@
+#!/bin/bash
+#
+#   install-diem - install the Diem blockchain from its repository
+#
+
+set -e
+
+diem_url='https://github.com/diem/diem.git'
+diem_checkout='testnet'
+
+move_url='https://github.com/diem/move.git'
+move_checkout='41a075acca3ef60df936ade6c982a6cc302b9546'
+
+rust_version='1.63.0'
+rust_url="https://static.rust-lang.org/dist/rust-${rust_version}-$(uname -m)-unknown-linux-gnu.tar.gz"
+
+ncpu=$(cat '/proc/cpuinfo' | grep '^processor[[:space:]]*:' | wc -l)
+njob=$(( ncpu / 2 ))  # OOM otherwise
+
+if ! command -v 'sudo' > '/dev/null' ; then
+    echo "Cannot find command 'sudo'" >&2
+    exit 1
+fi
+
+sudo -n apt-get install -yy 'clang' 'cmake' 'gcc' 'git' 'libssl-dev' 'make' \
+    'pkg-config'
+
+# Create an install dir if not already there.
+#
+if [ ! -e 'install' ] ; then
+    mkdir 'install'
+fi
+
+if [ ! -e "install/rust${rust_version}" ] ; then
+    # curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path --default-toolchain none
+    # export PATH="${HOME}/.cargo/bin:${PATH}"
+    # rustup toolchain install "${rust_version}"
+
+    curl -L "${rust_url}" | tar --one-top-level="install/rust${rust_version}install" --strip-components=1 -xzf -
+	."/install/rust${rust_version}install/install.sh" --destdir="install/rust${rust_version}" --prefix='' --without=rust-docs --disable-ldconfig
+fi
+export PATH="${PWD}/install/rust${rust_version}/bin:${PATH}"
+
+
+# print_on_terminal=$(dpkg-query -L libssl-dev)
+# echo $print_on_terminal
+# dpkg-query -L libssl-dev
+# openssl version -d
+# ls -al /usr/lib/ssl
+current=$(pwd)
+cd /usr/local/src
+sudo wget https://www.openssl.org/source/openssl-1.1.1q.tar.gz
+sudo tar -xf openssl-1.1.1q.tar.gz
+cd openssl-1.1.1q
+sudo ./config --prefix=/usr/local/ssl --openssldir=/usr/local/ssl shared zlib
+sudo make && sudo make install
+sleep 10
+cd "$current"
+
+# echo "/usr/local/openssl/lib" | sudo tee -a /etc/ld.so.conf
+echo "/usr/local/ssl/lib" | sudo tee -a /etc/ld.so.conf
+sudo ldconfig
+
+
+# export OPENSSL_DIR=/usr/lib/ssl
+# export OPENSSL_INCLUDE_DIR=/usr/include/
+export OPENSSL_DIR=/usr/local/ssl
+export OPENSSL_INCLUDE_DIR=/usr/local/ssl/include
+
+# Clone Diem from the official repository and build it.
+#
+git clone "${diem_url}" 'install/diem'
+(
+    cd 'install/diem'
+
+    git checkout "${diem_checkout}"
+
+    # Patch the Diem cli utility program so enabling custom scripts not only
+    # allow any account to execute any script but also allow them to publish
+    # any module.
+    #
+    sed -ri 's/(enable_custom_script\(params, )false(, true\) \{)/\1true\2/' \
+'testsuite/cli/src/dev_commands.rs'
+
+    export CARGO_HOME="${PWD}/.cargo"
+    export RUSTFLAGS="-Ctarget-cpu=native -Ctarget-feature=+aes,+sse2,+sse4.1,+ssse3"
+    export CARGO_PROFILE_RELEASE_LTO=thin
+
+    # export CARGO_LOG=trace
+    # export CARGO_NET_GIT_FETCH_WITH_CLI=true
+    # export ENV SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
+    # export CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse
+    # export CARGO_UNSTABLE_SPARSE_REGISTRY=true
+    export CARGO_NET_RETRY=100
+    # rm -rf .cargo/registry/*
+    # git config --global http.lowSpeedLimit 1000
+    # git config --global http.lowSpeedTime 60
+    # git config --global --unset http.proxy  
+    # git config --global --unset https.proxy
+    # sed -i 's/^registries.crates-io.protocol = .*/registries.crates-io.protocol = "sparse"/' .cargo/config.toml
+
+    for try in $(seq 1 15); do
+        echo $try
+        cargo update -p tokio --precise 1.11.0 && break
+    done
+        
+    sed -ri ':begin;N;$!bbegin;s/(\[profile\.release\]\ndebug = )true/\1false\nstrip = true/' Cargo.toml
+
+    # I don't know why but the compilation sometimes fails midway for no
+    # reason (although I suspect it's because of out-of-memory).
+    # Restart the compilation a couple of times until it compiles.
+    #
+    for try in $(seq 1 15) ; do
+        echo "try:${try}"
+        if cargo build --jobs ${njob} --release \
+                -p diem-node \
+                -p diem-swarm \
+                -p cli
+        then
+            break
+        fi
+    done
+
+    sudo find . -not \( -path './target/release/cli' -o -path './target/release/diem-node' -o -path './target/release/diem-swarm' \) -delete || true
+)
+
+# Clone Move from the official repository and build it.
+#
+git clone "${move_url}" 'install/move'
+(
+    cd 'install/move'
+
+    git checkout "${move_checkout}"
+
+    export CARGO_HOME="${PWD}/.cargo"
+    export RUSTFLAGS="-Ctarget-cpu=native -Ctarget-feature=+aes,+sse2,+sse4.1,+ssse3"
+    export CARGO_PROFILE_RELEASE_LTO=thin
+
+    # export CARGO_LOG=trace
+    # export CARGO_NET_GIT_FETCH_WITH_CLI=true
+    # export ENV SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
+    # export CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse
+    # export CARGO_UNSTABLE_SPARSE_REGISTRY=true
+    export CARGO_NET_RETRY=100
+    # rm -rf .cargo/registry/*
+    # git config --global http.lowSpeedLimit 1000
+    # git config --global http.lowSpeedTime 60
+    # git config --global --unset http.proxy  
+    # git config --global --unset https.proxy
+    # sed -i 's/^registries.crates-io.protocol = .*/registries.crates-io.protocol = "sparse"/' .cargo/config.toml
+
+    sed -ri ':begin;N;$!bbegin;s/(\[profile\.release\]\ndebug = )true/\1false\nstrip = true/' Cargo.toml
+
+    # I don't know why but the compilation sometimes fails midway for no
+    # reason (although I suspect it's because of out-of-memory).
+    # Restart the compilation a couple of times until it compiles.
+    #
+    for try in $(seq 1 15) ; do
+        echo "try:${try}"
+        cargo build --jobs ${njob} --release -p move-lang && break
+    done
+
+    sudo find . -not \( -path './language/move-stdlib/sources/*.move' -or -path './target/release/move-build' \) -delete || true
+)
+
+sudo rm -rf "${HOME}/install/rust${rust_version}" "${HOME}/install/rust${rust_version}install"

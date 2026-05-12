@@ -1,0 +1,71 @@
+FROM entity-image AS node
+
+# Copy the SSH private key to the container
+COPY tmp/id_ed25519 /root/.ssh/id_ed25519
+
+# Set correct permissions for the SSH private key
+RUN chmod 700 /root/.ssh
+
+# perlbrew and Perl dependencies installation
+RUN curl -L https://install.perlbrew.pl | bash \
+    && sleep 2 \
+    && source /root/perl5/perlbrew/etc/bashrc
+RUN exec bash; \
+    perlbrew install --notest --force perl-5.34.0; \
+    perlbrew switch perl-5.34.0
+
+# Additional Perl dependencies
+RUN wget -O YAML-1.24.tar.gz http://search.cpan.org/CPAN/authors/id/T/TI/TINITA/YAML-1.24.tar.gz; \
+    tar -xzvf YAML-1.24.tar.gz; \
+    cd YAML-1.24; \
+    perl Makefile.PL; \
+    make; \
+    make install; \
+    cd /; \
+    wget -O IO-Tee-0.65.tar.gz http://search.cpan.org/CPAN/authors/id/N/NE/NEILB/IO-Tee-0.65.tar.gz; \
+    tar -xzvf IO-Tee-0.65.tar.gz; \
+    cd IO-Tee-0.65; \
+    perl Makefile.PL; \
+    make; \
+    make install; \
+    cd /; \
+    cpan -i Capture::Tiny; \
+    cpan -i XML::Simple; \
+    cpan YAML; \
+    cpan JSON
+
+# Install pyenv and Python 3.10.6
+RUN curl https://pyenv.run | bash; \
+    echo 'export PATH="$HOME/.pyenv/bin:$PATH"' >> /root/.bashrc; \
+    echo 'eval "$(pyenv init --path)"' >> /root/.bashrc; \
+    echo 'eval "$(pyenv virtualenv-init -)"' >> /root/.bashrc; \
+    source /root/.bashrc
+RUN exec bash; \
+    pyenv install -s 3.10.6; \
+    pyenv global 3.10.6; \
+    pip install PyYAML
+
+RUN pip install --no-cache-dir \
+    pandas \
+    seaborn \
+    matplotlib \
+    numpy
+
+RUN apt-get upgrade -y
+RUN apt-get clean; rm -rf /var/lib/apt/lists/
+
+ADD ./minion.sh /
+RUN chmod +x minion.sh
+
+ADD ./init-minion.sh /
+RUN chmod +x init-minion.sh
+
+ADD ./fixes /fixes
+COPY ./tmp/* /tmp/
+RUN find /tmp -type f \( -name "*.sh" -o -name "*.py" \) -exec chmod +x {} \;
+
+# ENTRYPOINT service ssh start && /minion.sh
+# ENTRYPOINT service ssh start && /minion.sh && bash
+
+# ADD ./primary_client.sh /
+# ENTRYPOINT ["/bin/bash", "/minion.sh"]

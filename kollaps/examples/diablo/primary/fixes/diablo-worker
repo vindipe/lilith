@@ -1,0 +1,326 @@
+#!/bin/bash
+#
+#   diablo-worker - run diablo on a worker node
+#
+#   Assume diablo is installed on the current environment under the path
+#   "$HOME/install/diablo" and deployed under the path "$HOME/deploy/diablo".
+#
+#   Depending on the worker role defined during deployment, start or stop a
+#   diablo primary or secondary node.
+#
+
+set -e
+
+script_name='diablo-worker'
+install_root="${HOME}/install/diablo"
+solidity_root="${HOME}/install/solidity"
+solang_root="${HOME}/install/solang"
+move_root="${HOME}/install/move"
+deploy_root="${HOME}/deploy/diablo"
+
+
+# Utility functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+fatal() {
+    local msg="$1" ; shift
+
+    exec >&2
+
+    echo "${script_name}: ${msg}"
+    echo
+    echo "Usage: $0 <role> <action>"
+    echo
+    echo "If the role of the currently deployed diablo node is <role>, then"
+    echo "execute the specified <action>."
+    echo
+    echo "The role is either 'primary', 'secondary' or 'any'."
+    echo "The action is either 'start' or 'stop'."
+
+    exit 1
+}
+
+setup_environment() {
+    if [ ! -e "${install_root}" ] ; then
+	fatal "cannot find diablo install at '${install_root}'"
+    fi
+
+    export PATH="${install_root}:${PATH}"
+
+    if ! command -v 'diablo' > '/dev/null' 2> '/dev/null' ; then
+	fatal "cannot find diablo executable in '${install_root}'"
+    fi
+
+    if [ -d "${solidity_root}" ] ; then
+	export PATH="${solidity_root}/build/solc/:${PATH}"
+    fi
+
+	if [ -d "${solang_root}" ] ; then
+	export PATH="${solang_root}/target/release:${PATH}"
+    fi
+
+	if [ -d "${move_root}" ] ; then
+	export PATH="${move_root}/target/release:${PATH}"
+	fi
+}
+
+
+# Primary node  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+start_primary() {
+    local dir pid port nsecondary
+
+    dir="${deploy_root}/primary"
+
+    if [ ! -d "${dir}" ] ; then
+	return 0
+    fi
+
+    port="$(cat "${dir}/port")"
+    nsecondary="$(cat "${dir}/nsecondary")"
+
+    if ! echo "${port}" | grep -Pq '^\d+$' ; then
+	fatal "cannot start diablo primary with port '${port}'"
+    fi
+    
+    # diablo primary \
+    #     --config="${deploy_root}/workload.yaml"\
+    #     --chain-config="${dir}/chain.yaml" \
+    # 	--addr="0.0.0.0:${port}" \
+    # 	--level='DEBUG' \
+    # 	> "${dir}/out" \
+    # 	2> "${dir}/err" &
+    set -x
+	# ulimit -n 65535
+    diablo primary \
+	   -vvvvv \
+	   --env="accounts=${dir}/accounts.yaml" \
+	   --env="contracts=${install_root}/move-contracts" \
+	   --env="contracts=${install_root}/teal-contracts" \
+	   --env="contracts=${install_root}/solidity-contracts" \
+	   --port=${port} \
+	   --output="${dir}/results.json" \
+	   --compress --stat \
+	   ${nsecondary} "${dir}/setup.yaml" "${deploy_root}/workload.yaml" \
+	   > "${dir}/out" 2> "${dir}/err" &	
+    pid=$!
+    set +x
+
+    echo ${pid} > "${dir}/pid"
+
+	# echo "START PRIMARYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY"
+	bash /tmp/start_measurements.sh > /dev/null 2>&1 &
+	echo "Started measurements"
+	# wait
+	# echo "Measurements started"
+
+    sleep 10
+}
+
+stop_primary() {
+    local dir pid
+
+    dir="${deploy_root}/primary"
+
+    if [ ! -d "${dir}" ] ; then
+	return 0
+    elif [ ! -e "${dir}/pid" ] ; then
+	return 0
+    fi
+
+    pid="$(cat "${dir}/pid")"
+
+    if ! echo "${pid}" | grep -Pq '^\d+$' ; then
+	fatal "cannot kill diablo primary with pid '${pid}'"
+    fi
+
+    kill ${pid} 2> '/dev/null' || true
+
+    rm "${dir}/pid"
+    if ! mv 'results' "${dir}/results" ; then
+	echo 'No results found'
+	mkdir "${dir}/results"
+    fi
+
+    echo "--"
+    cat "${dir}/out"
+    echo "--"
+    cat "${sir}/err"
+}
+
+wait_primary() {
+    local dir pid
+
+    dir="${deploy_root}/primary"
+
+    if [ ! -d "${dir}" ] ; then
+	return 0
+    elif [ ! -e "${dir}/pid" ] ; then
+	return 0
+    fi
+
+    pid="$(cat "${dir}/pid")"
+
+    if ! echo "${pid}" | grep -Pq '^\d+$' ; then
+	fatal "cannot wait diablo primary with pid '${pid}'"
+    fi
+
+    while ps aux | grep "${pid}" | grep 'diablo' > '/dev/null' ; do
+	echo "WAIT PRIMARYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY 4"
+	sleep 10
+    done
+
+	echo "WAIT PRIMARYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY 5"
+	sleep 5
+
+    rm "${dir}/pid"
+    if ! mv 'results' "${dir}/results" ; then
+	echo 'No results found'
+	mkdir "${dir}/results"
+    fi
+}
+
+
+# Secondary node  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+start_secondary() {
+    local dir pid addr ip port region
+
+    for dir in "${deploy_root}/secondary"* ; do
+	if [ ! -d "${dir}" ] ; then
+	    continue
+	fi
+
+	addr="$(cat "${dir}/primary")"
+	ip="$(echo "${addr}" | cut -d':' -f1)"
+	port="$(echo "${addr}" | cut -d':' -f2)"
+	region="$(cat "${dir}/region")"
+
+	# diablo secondary \
+	#        -m "${addr}" \
+        #        --config="${deploy_root}/workload.yaml" \
+	#        --chain-config="${deploy_root}/chain.yaml" \
+	#        --level='DEBUG' \
+	#        > "${dir}/out" \
+	#        2> "${dir}/err" &
+	set -x
+	# ulimit -n 65535
+	diablo secondary \
+	       -vvvvv \
+	       --tag="${region}" \
+	       --port=${port} \
+	       ${ip} \
+	       > "${dir}/out" 2> "${dir}/err" &
+	pid=$!
+	set +x
+
+	echo ${pid} > "${dir}/pid"
+    done
+}
+
+stop_secondary() {
+    local dir pid
+
+    for dir in "${deploy_root}/secondary"* ; do
+	if [ ! -d "${dir}" ] ; then
+	    continue
+	elif [ ! -e "${dir}/pid" ] ; then
+	    continue
+	fi
+
+	pid="$(cat "${dir}/pid")"
+
+	if ! echo "${pid}" | grep -Pq '^\d+$' ; then
+	    fatal "cannot kill diablo secondary with pid '${pid}'"
+	fi
+
+	kill ${pid} 2> '/dev/null' || true
+
+	rm "${dir}/pid"
+    done
+}
+
+wait_secondary() {
+    local dir pid
+
+    for dir in "${deploy_root}/secondary"* ; do
+	if [ ! -d "${dir}" ] ; then
+	    continue
+	elif [ ! -e "${sir}/pid" ] ; then
+	    continue
+	fi
+
+	pid="$(cat "${dir}/pid")"
+
+	if ! echo "${pid}" | grep -Pq '^\d+$' ; then
+	    fatal "cannot wait diablo secondary with pid '${pid}'"
+	fi
+
+	while ps aux | grep -q "${pid}" | grep 'diablo' > '/dev/null' ; do
+	    sleep 10
+	done
+
+	rm "${dir}/pid"
+    done
+}
+
+
+# Main script - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+setup_environment
+
+if [ $# -lt 1 ] ; then
+    fatal "missing role operand"
+elif [ $# -lt 2 ] ; then
+    fatal "missing action operand"
+fi
+
+role="$1" ; shift
+action="$1" ; shift
+
+case "${role}" in
+    'any')
+	role_primary=1
+	role_secondary=1
+	;;
+    'primary')
+	role_primary=1
+	role_secondary=0
+	;;
+    'secondary')
+	role_primary=0
+	role_secondary=1
+	;;
+    *)
+	fatal "unknown role '${role}'"
+	;;
+esac
+
+case "${action}" in
+    'start')
+	if [ ${role_primary} -eq 1 ] ; then
+	    start_primary "$@"
+	fi
+	if [ ${role_secondary} -eq 1 ] ; then
+	    start_secondary "$@"
+	fi
+	;;
+    'stop')
+	if [ ${role_primary} -eq 1 ] ; then
+	    stop_primary "$@"
+	fi
+	if [ ${role_secondary} -eq 1 ] ; then
+	    stop_secondary "$@"
+	fi
+	;;
+    'wait')
+	if [ ${role_primary} -eq 1 ] ; then
+	    wait_primary "$@"
+	fi
+	if [ ${role_secondary} -eq 1 ] ; then
+	    wait_secondary "$@"
+	fi
+	;;
+    *)
+	fatal "unknown action: '${action}'"
+	;;
+esac

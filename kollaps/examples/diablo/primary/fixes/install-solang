@@ -1,0 +1,111 @@
+#!/bin/bash
+#
+#   install-solang - install the Solang compiler from its repository
+#
+
+set -e
+
+llvm_url='https://github.com/solana-labs/llvm-project.git'
+llvm_checkout='solana-rustc/13.0-2021-08-08'
+
+solang_url='https://github.com/hyperledger-labs/solang.git'
+solang_checkout='v0.1.11'
+# solang_checkout='v0.1.10'
+
+# Create an install dir if not already there.
+#
+if [ ! -e 'install' ] ; then
+    mkdir 'install'
+fi
+
+if ! command -v 'sudo' > '/dev/null' ; then
+    echo "Cannot find command 'sudo'" >&2
+    exit 1
+fi
+
+while sudo fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1 ; do
+    echo 'Waiting for release of dpkg/apt locks'
+    sleep 5
+done
+
+# Install common utilities.
+#
+# sudo apt-get update -y
+# sudo apt-get install llvm-dev -y
+sudo -n apt-get -o DPkg::Lock::Timeout=1200 install -yy 'cmake' 'gcc' 'g++' 'git' 'ninja-build' 'make' 'cargo'
+
+arch=$(uname -m)
+if [[ $arch = x86_64 ]]; then
+    solang_install_dir='install/solang/target/release'
+
+    mkdir -p $solang_install_dir
+
+    curl -L "https://github.com/hyperledger-labs/solang/releases/download/${solang_checkout}/solang-linux-x86-64" -o "$solang_install_dir/solang"
+
+    chmod +x "$solang_install_dir/solang"
+
+    echo "SHORTCUT"
+
+    export PATH=$PATH:/$solang_install_dir
+    export PATH=$PATH:/$solang_install_dir/solang
+
+    # echo $PATH > /log.txt
+
+    exit 0
+fi
+
+# ALREADY INSERTED IN THE SOLANA SCRIPT
+# current=$(pwd)
+# cd /usr/local/src
+# sudo wget https://www.openssl.org/source/openssl-1.1.1q.tar.gz
+# sudo tar -xf openssl-1.1.1q.tar.gz
+# cd openssl-1.1.1q
+# sudo ./config --prefix=/usr/local/ssl --openssldir=/usr/local/ssl shared zlib
+# sudo make && sudo make install
+# sleep 10
+# cd "$current"
+
+# # echo "/usr/local/openssl/lib" | sudo tee -a /etc/ld.so.conf
+# echo "/usr/local/ssl/lib" | sudo tee -a /etc/ld.so.conf
+# sudo ldconfig
+
+# export OPENSSL_DIR=/usr/local/ssl
+# export OPENSSL_INCLUDE_DIR=/usr/local/ssl/include
+
+
+# Clone Solang and LLVM from the official repository and build LLVM.
+#
+git clone "${solang_url}" 'install/solang'
+git clone "${llvm_url}" 'install/solang/llvm-project'
+(
+    cd 'install/solang/llvm-project'
+
+    git checkout "${llvm_checkout}"
+
+    mkdir 'build'
+    cd 'build'
+    
+    cmake -G Ninja -DLLVM_ENABLE_ASSERTIONS=On -DLLVM_ENABLE_TERMINFO=Off \
+        -DLLVM_ENABLE_LIBXML2=Off -DLLVM_ENABLE_ZLIB=Off \
+        -DLLVM_ENABLE_PROJECTS='clang;lld' \
+        -DLLVM_TARGETS_TO_BUILD='WebAssembly;BPF' \
+        -DCMAKE_BUILD_TYPE=MinSizeRel -DCMAKE_INSTALL_PREFIX=../llvm13.0 ../llvm
+
+    cmake --build . --target install
+)
+
+# Build Solang.
+#
+(
+    export PATH="$PATH:$PWD/install/solang/llvm13.0/bin"
+
+    cd 'install/solang'
+
+    git checkout "${solang_checkout}"
+
+    for try in $(seq 1 15) ; do
+        echo "try:${try}"
+        cargo build --release && break
+    done
+)
+echo "HERE6"

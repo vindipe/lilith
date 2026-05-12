@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<experiment boot="kollaps:2.0">
+
+  <config>    
+  </config>
+
+	<services>
+		<service name="dashboard" image="kollaps/dashboard:1.0" supervisor="true" port="8088"/>
+  </services>
+
+  <bridges>
+  </bridges>
+
+  <links>
+  </links>    
+
+  <dynamic>
+  </dynamic>        
+</experiment>

@@ -1,0 +1,5 @@
+# Constant 1800 tps
+id: "native-1800"
+txs:
+    0: 1800
+    300: 0

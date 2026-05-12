@@ -1,0 +1,10 @@
+# A Number of request on the day of the biggest football match of the 1998 world cup
+id: "smart-football"
+contract: "counter:add"
+txs:
+    0: 38020
+    40: 40545
+    75: 45761
+    90: 39437
+    100: 35472
+    101: 0
